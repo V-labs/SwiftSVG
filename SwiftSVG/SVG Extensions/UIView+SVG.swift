@@ -35,12 +35,15 @@ import UIKit
 import AppKit
 #endif
 
+enum SVGDownloadError: Swift.Error {
+  case downloadError
+}
 
 /**
  A set of convenience initializers that create new `UIView` instances from SVG data
  */
 public extension UIView {
-    
+
     /**
      Convenience initializer that instantiates a new `UIView` instance with a single path `d` string. The path will be parsed synchronously.
      ```
@@ -59,7 +62,7 @@ public extension UIView {
         self.nonOptionalLayer.addSublayer(svgLayer)
         #endif
     }
-    
+
     /**
      Convenience initializer that instantiates a new `UIView` for the given SVG file in the main bundle
      ```
@@ -70,11 +73,11 @@ public extension UIView {
      - Parameter completion: A required completion block to execute once the SVG has completed parsing. The passed `SVGLayer` will be added to this view's sublayers before executing the completion block
      */
     public convenience init(SVGNamed: String, parser: SVGParser? = nil, completion: ((SVGLayer) -> ())? = nil) {
-        
+
         // TODO: This is too many guards to really make any sense. Also approaching on the
         // pyramid of death Refactor this at some point to be able to work cross-platform.
         if #available(iOS 9.0, OSX 10.11, *) {
-            
+
             var data: Data?
             #if os(iOS)
             if let asset = NSDataAsset(name: SVGNamed) {
@@ -85,7 +88,7 @@ public extension UIView {
                 data = asset.data
             }
             #endif
-            
+
             guard let unwrapped = data else {
                 guard let svgURL = Bundle.main.url(forResource: SVGNamed, withExtension: "svg") else {
                     self.init()
@@ -115,10 +118,10 @@ public extension UIView {
             }
         }
     }
-    
+
     /**
      Convenience initializer that instantiates a new `UIView` instance for the given SVG file at the given URL
-     
+
      Upon completion, it will resize the layer to aspect fit this view's superview
      ```
      let view = UIView(SVGURL: "hawaiiFlowers", parser: aParser) { (svgLayer) in
@@ -129,19 +132,20 @@ public extension UIView {
      - Parameter parser: The optional parser to use to parse the SVG file
      - Parameter completion: A required completion block to execute once the SVG has completed parsing. The passed `SVGLayer` will be added to this view's sublayers before executing the completion block
      */
-    public convenience init(SVGURL: URL, parser: SVGParser? = nil, completion: ((SVGLayer) -> ())? = nil) {
+    public convenience init?(SVGURL: URL, parser: SVGParser? = nil, completion: ((SVGLayer) -> ())? = nil) {
         do {
             let svgData = try Data(contentsOf: SVGURL)
             self.init(SVGData: svgData, parser: parser, completion: completion)
         } catch {
-            self.init()
+            // self.init()
             Swift.print("No data at URL: \(SVGURL)")
+            throw SVGDownloadError.downloadError()
         }
     }
-	
+
     /**
      Convenience initializer that instantiates a new `UIView` instance with the given SVG data
-     
+
      Upon completion, it will resize the layer to aspect fit this view's superview
      ```
      let view = UIView(SVGData: svgData)
@@ -152,7 +156,7 @@ public extension UIView {
      */
 	public convenience init(SVGData svgData: Data, parser: SVGParser? = nil, completion: ((SVGLayer) -> ())? = nil) {
 		self.init()
-        
+
         CALayer(SVGData: svgData, parser: parser) { [weak self] (svgLayer) in
             DispatchQueue.main.safeAsync {
                 self?.nonOptionalLayer.addSublayer(svgLayer)
@@ -160,5 +164,5 @@ public extension UIView {
             completion?(svgLayer)
         }
 	}
-    
+
 }
