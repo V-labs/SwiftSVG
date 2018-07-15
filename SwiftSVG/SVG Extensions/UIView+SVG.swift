@@ -35,10 +35,6 @@ import UIKit
 import AppKit
 #endif
 
-enum SVGDownloadError: Swift.Error {
-  case downloadError
-}
-
 /**
  A set of convenience initializers that create new `UIView` instances from SVG data
  */
@@ -132,16 +128,15 @@ public extension UIView {
      - Parameter parser: The optional parser to use to parse the SVG file
      - Parameter completion: A required completion block to execute once the SVG has completed parsing. The passed `SVGLayer` will be added to this view's sublayers before executing the completion block
      */
-    public convenience init?(SVGURL: URL, parser: SVGParser? = nil, completion: ((SVGLayer) -> ())? = nil) {
-        do {
-            let svgData = try Data(contentsOf: SVGURL)
-            self.init(SVGData: svgData, parser: parser, completion: completion)
-        } catch {
-            // self.init()
-            Swift.print("No data at URL: \(SVGURL)")
-            throw SVGDownloadError.downloadError()
-        }
-    }
+     public convenience init?(SVGURL: URL, parser: SVGParser? = nil, completion: ((SVGLayer) -> Void)? = nil) {
+         do {
+             let svgData = try Data(contentsOf: SVGURL)
+             self.init(SVGData: svgData, parser: parser, completion: completion)
+         } catch {
+             Swift.print("No data at URL: \(SVGURL)")
+             return nil
+         }
+     }
 
     /**
      Convenience initializer that instantiates a new `UIView` instance with the given SVG data
